@@ -129,8 +129,7 @@ class PhysicsInformedNN:
             loss.backward()
             self.optimizer.step()
             train_loss_hist.append(loss.item())
-            if it % 10 == 0:
-                logger.info(f'Iter: {it}, Loss: {loss.item():.3e}')
+            logger.info(f'Iter: {it}, Loss: {loss.item():.3e}')
             if it % 1000 == 0:
                 torch.save(self.model.state_dict(), os.path.join(exp_path, f'nn_model_{it}.pth'))
         return train_loss_hist
@@ -251,6 +250,7 @@ if not args.testing:
     plt.figure()
     plt.plot(hist)
     plt.xlabel('Iterations')
+    plt.yscale('log')
     plt.ylabel('Loss')
     plt.title('Loss vs. Iterations')
     ax = plt.gca()
@@ -281,6 +281,7 @@ H_pred = griddata(X_star, h_pred.flatten(), (x[:, None], t[None, :]), method='cu
 
 # Exact solution: compute h
 Exact_h = np.sqrt(Exact_u ** 2 + Exact_v ** 2)
+logger.info(f"Test Error: {Exact_h:.3e}")
 # Exact_h = Exact_h.T  # Match dimensions with H_pred for plotting
 
 # Create training points for visualization (as in your original code)

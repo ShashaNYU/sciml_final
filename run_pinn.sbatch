@@ -1,10 +1,11 @@
 #!/bin/bash
+#SBATCH --array=999,536,186,197,987,406,967,204,221,73
 #SBATCH --gres=gpu:1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem=30G
+#SBATCH --mem=10G
 #SBATCH --time=3000
-#SBATCH -o log/pinn-%j.output
-#SBATCH -e log/pinn-%j.error
+#SBATCH -o log/pinn_%A_%a.output
+#SBATCH -e log/pinn_%A_%a.error
 
 
 layers="2 100 100 100 100 2"
@@ -12,7 +13,7 @@ N0=50
 N_b=50
 N_f=20000
 num_epoch=50000
-seed=999
+seed=$SLURM_ARRAY_TASK_ID
 device=0
 ft_max_iter=2000
 ft_tolerance_grad=1e-6
