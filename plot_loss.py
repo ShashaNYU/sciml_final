@@ -3,15 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-layers="2 100 100 100 100 2"
+layers="2 50 50 50 50 2"
 N0=50
 N_b=50
 N_f=20000
-num_epoch=50000
+num_epoch=5000
 device=0
-ft_max_iter=2000
-ft_tolerance_grad=1e-6
-ft_tolerance_change=1e-7
+ft_max_iter=1000
+ft_tolerance_grad=1e-4
+ft_tolerance_change=1e-5
 ft_chunks=5
 
 
@@ -85,4 +85,4 @@ plt.ylabel("Loss")
 plt.title("Train and Test Loss Over Multiple Runs")
 plt.legend()
 # plt.show()
-plt.savefig('loss.png')
+plt.savefig('loss_hpp.png')
