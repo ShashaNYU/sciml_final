@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 layers="2 50 50 50 50 2"
 N0=50
 N_b=50
-N_f=20000
+N_f=1000
 num_epoch=5000
 device=0
 ft_max_iter=1000
@@ -85,4 +85,4 @@ plt.ylabel("Loss")
 plt.title("Train and Test Loss Over Multiple Runs")
 plt.legend()
 # plt.show()
-plt.savefig('loss_hpp.png')
+plt.savefig('loss_hpp_v2.png')

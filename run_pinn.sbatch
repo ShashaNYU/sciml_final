@@ -11,7 +11,7 @@
 layers="2 50 50 50 50 2"  # "2 100 100 100 100 2"
 N0=50
 N_b=50
-N_f=20000
+N_f=1000 # 20000
 num_epoch=5000 # 50000
 seed=$SLURM_ARRAY_TASK_ID
 device=0
