@@ -39,7 +39,7 @@ args = arg_parser.parse_args(params)
 
 
 def load_exp_path(args):
-    exp_path = "exp/pinn"
+    exp_path = "exp/pinn_wt"
     exp_path += "_ly-" + "-".join([str(_) for _ in args.layers]) + '_'
     exp_path += f"_N0-{args.N0}_Nb-{args.N_b}_Nf-{args.N_f}_NE-{args.num_epoch}"
     exp_path += f"_ft-mi-{args.ft_max_iter}-tg-{args.ft_tolerance_grad}-tc-{args.ft_tolerance_change}-ch-{args.ft_chunks}"
@@ -121,7 +121,7 @@ class PhysicsInformedNN:
                torch.mean(f_v_pred ** 2)
         return loss
 
-    def train(self, n_iter):
+    def train(self, n_iter, X_star, Exact_h):
         train_loss_hist = []
         for it in range(n_iter):
             self.optimizer.zero_grad()
@@ -129,7 +129,9 @@ class PhysicsInformedNN:
             loss.backward()
             self.optimizer.step()
             train_loss_hist.append(loss.item())
-            logger.info(f'Iter: {it}, Loss: {loss.item():.3e}')
+            logger.info(f'Iter: {it}, Training Loss: {loss.item():.3e}')
+            test_loss = self.cal_test_loss(X_star, Exact_h)
+            logger.info(f'Iter: {it}, Testing Loss: {test_loss.item():.3e}')
             if it % 1000 == 0:
                 torch.save(self.model.state_dict(), os.path.join(exp_path, f'nn_model_{it}.pth'))
         return train_loss_hist
@@ -150,6 +152,13 @@ class PhysicsInformedNN:
             f_u_pred.detach().cpu().numpy(),
             f_v_pred.detach().cpu().numpy(),
         )
+
+    def cal_test_loss(self, X_star, Exact_h):
+        u_pred, v_pred, f_u_pred, f_v_pred = self.predict(X_star)
+        h_pred = np.sqrt(u_pred ** 2 + v_pred ** 2)
+        H_pred = griddata(X_star, h_pred.flatten(), (x[:, None], t[None, :]), method='cubic')
+        error_h = np.linalg.norm(Exact_h - H_pred.squeeze(-1)) / np.linalg.norm(Exact_h)
+        return error_h
 
 
 # Load data from NLS.mat
@@ -186,24 +195,23 @@ tb = t[idx_t, :]
 
 # Collocation points
 X_f = lb + (ub - lb) * lhs(2, N_f)
-
+X_star = np.hstack((
+        np.repeat(x, len(t))[:, None],  # Reshape to (N, 1)
+        np.tile(t.flatten(), len(x))[:, None]  # Flatten `t` and reshape to (N, 1)
+    ))
 
 if not args.testing:
     # Initialize and train model
     model = PhysicsInformedNN(x0, u0, v0, tb, X_f, layers, lb, ub, args.device)
     logger.info(model)
     start_time = time.time()
-    hist = model.train(args.num_epoch)
+    hist = model.train(args.num_epoch, X_star, Exact_h)
     elapsed = time.time() - start_time
     adam_training_time = time.time() - start_time
     logger.info(f"Adam Training Time: {adam_training_time:.2f} seconds")
 
     # Prediction
     # X_star = np.hstack((np.repeat(x, len(t)), np.tile(t, len(x)))).reshape(-1, 2)
-    X_star = np.hstack((
-        np.repeat(x, len(t))[:, None],  # Reshape to (N, 1)
-        np.tile(t.flatten(), len(x))[:, None]  # Flatten `t` and reshape to (N, 1)
-    ))
     u_pred, v_pred, f_u_pred, f_v_pred = model.predict(X_star)
 
     # Define closure for L-BFGS
@@ -280,8 +288,8 @@ h_pred = np.sqrt(u_pred ** 2 + v_pred ** 2)
 H_pred = griddata(X_star, h_pred.flatten(), (x[:, None], t[None, :]), method='cubic')
 
 # Exact solution: compute h
-Exact_h = np.sqrt(Exact_u ** 2 + Exact_v ** 2)
-logger.info(f"Test Error: {Exact_h:.3e}")
+# Exact_h = np.sqrt(Exact_u ** 2 + Exact_v ** 2)
+# logger.info(f"Test Error: {Exact_h.item():.3e}")
 # Exact_h = Exact_h.T  # Match dimensions with H_pred for plotting
 
 # Create training points for visualization (as in your original code)
