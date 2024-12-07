@@ -8,11 +8,11 @@
 #SBATCH -e log/pinn_%A_%a.error
 
 
-layers="2 50 50 50 50 2"  # "2 100 100 100 100 2"
+layers="2 10 2"  # "2 100 100 100 100 2"
 N0=50
 N_b=50
 N_f=1000 # 20000
-num_epoch=5000 # 50000
+num_epoch=10000 # 50000
 seed=$SLURM_ARRAY_TASK_ID
 device=0
 ft_max_iter=1000 # 2000

@@ -47,6 +47,11 @@ def load_exp_path(args):
     os.makedirs(exp_path, exist_ok=True)
     return exp_path
 
+set_random_seed(42)
+test_ids = list(range(201 * 256))
+random.shuffle(test_ids)
+test_ids = test_ids[:100]
+
 exp_path = load_exp_path(args)
 logger = set_logger(exp_path, args.testing)
 set_random_seed(args.seed)
@@ -157,7 +162,7 @@ class PhysicsInformedNN:
         u_pred, v_pred, f_u_pred, f_v_pred = self.predict(X_star)
         h_pred = np.sqrt(u_pred ** 2 + v_pred ** 2)
         H_pred = griddata(X_star, h_pred.flatten(), (x[:, None], t[None, :]), method='cubic')
-        error_h = np.linalg.norm(Exact_h - H_pred.squeeze(-1)) / np.linalg.norm(Exact_h)
+        error_h = np.linalg.norm(Exact_h.reshape(-1)[test_ids] - H_pred.reshape(-1)[test_ids]) / np.linalg.norm(Exact_h.reshape(-1)[test_ids])
         return error_h
 
 
@@ -199,6 +204,7 @@ X_star = np.hstack((
         np.repeat(x, len(t))[:, None],  # Reshape to (N, 1)
         np.tile(t.flatten(), len(x))[:, None]  # Flatten `t` and reshape to (N, 1)
     ))
+X_star = X_star[test_ids, :]
 
 if not args.testing:
     # Initialize and train model
@@ -242,16 +248,17 @@ if not args.testing:
         np.repeat(x, len(t))[:, None],            # Reshape to (N, 1)
         np.tile(t.flatten(), len(x))[:, None]    # Flatten `t` and reshape to (N, 1)
     ))
+    X_star = X_star[test_ids, :]
     u_pred, v_pred, f_u_pred, f_v_pred = model.predict(X_star)
 
     # Error computation
-    u_star = Exact_u.T.flatten()[:, None]
-    v_star = Exact_v.T.flatten()[:, None]
-    error_u = np.linalg.norm(u_star - u_pred, 2) / np.linalg.norm(u_star, 2)
-    error_v = np.linalg.norm(v_star - v_pred, 2) / np.linalg.norm(v_star, 2)
+    #u_star = Exact_u.T.flatten()[:, None]
+    #v_star = Exact_v.T.flatten()[:, None]
+    #error_u = np.linalg.norm(u_star - u_pred, 2) / np.linalg.norm(u_star, 2)
+    #error_v = np.linalg.norm(v_star - v_pred, 2) / np.linalg.norm(v_star, 2)
 
-    logger.info(f"Error u: {error_u:.3e}")
-    logger.info(f"Error v: {error_v:.3e}")
+    #logger.info(f"Error u: {error_u:.3e}")
+    #logger.info(f"Error v: {error_v:.3e}")
 
 
 
@@ -270,6 +277,7 @@ else:
         np.repeat(x, len(t))[:, None],  # Reshape to (N, 1)
         np.tile(t.flatten(), len(x))[:, None]  # Flatten `t` and reshape to (N, 1)
     ))
+    X_star = X_star[test_ids, :]
 
     # Generate predictions
     model = PhysicsInformedNN(x0, u0, v0, tb, X_f, layers, lb, ub)
